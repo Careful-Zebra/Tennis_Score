@@ -15,6 +15,12 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import kotlin.collections.plus
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 @Composable
 fun ScoreScreen() {
@@ -39,6 +45,30 @@ fun ScoreScreen() {
             )
         }
 
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = 2.dp.toPx()
+            val diameter = minOf(size.width, size.height) - stroke
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+
+            drawArc(
+                color = Color.Blue.copy(alpha = 0.35f),
+                startAngle = 90f, sweepAngle = 180f, useCenter = false,
+                topLeft = topLeft, size = arcSize, style = Stroke(width = stroke)
+            )
+            drawArc(
+                color = Color.Red.copy(alpha = 0.35f),
+                startAngle = -90f, sweepAngle = 180f, useCenter = false,
+                topLeft = topLeft, size = arcSize, style = Stroke(width = stroke)
+            )
+            drawLine(
+                color = Color.White.copy(alpha = 0.25f),
+                start = Offset(size.width / 2f, topLeft.y),
+                end = Offset(size.width / 2f, topLeft.y + diameter),
+                strokeWidth = stroke
+            )
+        }
+
         ScoreOverlay(state = state, modifier = Modifier.align(Alignment.Center))
 
         if (history.size > 1) {
@@ -52,6 +82,8 @@ fun ScoreScreen() {
                     .pointerInput(Unit) {
                         detectTapGestures(onTap = { history = TennisScore.undo(history) })
                     }
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(50))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
     }
