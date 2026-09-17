@@ -31,7 +31,7 @@ fun ScoreScreen() {
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
 
         // Left half = point for Player A, right half = point for Player B.
-        // Big tap zones on purpose: sweaty fingers, quick glances mid point.
+        // Big tap zones on purpose: sweaty fingers, quick glances mid-point.
         Row(modifier = Modifier.fillMaxSize()) {
             TapZone(
                 modifier = Modifier.weight(1f),
