@@ -18,15 +18,27 @@ import kotlin.collections.plus
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Brush
 
 @Composable
 fun ScoreScreen() {
     // History enables one-tap undo if you fat-finger a point mid-rally.
     var history by remember { mutableStateOf(listOf(MatchState())) }
     val state = history.last()
+
+    // Support for the wash animation for the undo button
+    val wash = remember {Animatable(0f)}
+    val scope = rememberCoroutineScope()
+    val FadeColor = Color(0xFFFFC107) // amber :)
+
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
 
@@ -36,12 +48,12 @@ fun ScoreScreen() {
             TapZone(
                 modifier = Modifier.weight(1f),
                 enabled = state.winner == null,
-                onTap = { history = history + TennisScore.pointWon(state, Player.A) }
+                onTap = { history = TennisScore.recordPoint(history, Player.A) }
             )
             TapZone(
                 modifier = Modifier.weight(1f),
                 enabled = state.winner == null,
-                onTap = { history = history + TennisScore.pointWon(state, Player.B) }
+                onTap = { history = TennisScore.recordPoint(history, Player.B) }
             )
         }
 
@@ -71,18 +83,50 @@ fun ScoreScreen() {
 
         ScoreOverlay(state = state, modifier = Modifier.align(Alignment.Center))
 
+
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .drawBehind {
+                    if (wash.value == 0f || wash.value == 1f) return@drawBehind
+                    val center = Offset(size.width / 2, size.height)
+                    val radius = wash.value * size.maxDimension * 1.2f
+                    val opacity = (1 - wash.value * wash.value) * 0.9f
+
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            0f to FadeColor.copy(alpha = opacity),
+                            0.6f to FadeColor.copy(alpha = opacity),  // solid out to 60% of the radius
+                            1f to FadeColor.copy(alpha=0f),                     // then fade over the outer 40%
+                            center = center,
+                            radius = radius
+                        ),
+                        radius = radius,
+                        center = center
+                    )
+                }
+        )
+
         if (history.size > 1) {
             Text(
                 text = "undo",
-                fontSize = 12.sp,
+                fontSize = 16.sp,
                 color = Color.Gray,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 6.dp)
+                    .padding(bottom = 8.dp)
                     .pointerInput(Unit) {
-                        detectTapGestures(onTap = { history = TennisScore.undo(history) })
+                        detectTapGestures(onTap = {
+                            history = TennisScore.undo(history)
+                            scope.launch { // jump straight to visible, then fade out over 400ms
+                                wash.snapTo(0f)
+                                wash.animateTo(1f, tween(600, easing= LinearOutSlowInEasing))
+                            }
+                        })
+
                     }
-                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(50))
+                    .border(1.dp, FadeColor.copy(alpha = 0.35f), RoundedCornerShape(50))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }

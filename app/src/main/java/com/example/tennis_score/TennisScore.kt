@@ -32,6 +32,12 @@ object TennisScore {
     fun undo(history: List<MatchState>): List<MatchState> =
         if (history.size > 1) history.dropLast(1) else history
 
+    fun recordPoint(history: List<MatchState>, winner: Player): List<MatchState> {
+        val current = history.last()
+        if (current.winner != null) return history  // match over: don't add a duplicate entry
+        return history + pointWon(current, winner)
+    }
+
     // --- Display helpers ---
 
     fun pointLabel(mine: Int, theirs: Int): String {
